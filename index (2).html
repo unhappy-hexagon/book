@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ספר — מצגת תמונות + כפתור קנייה</title>
+  <style>
+    :root{--gap:18px;--accent:#e94e77;--bg:#e0f2f7; /* Changed to baby blue */ --text:#222}
+    html,body{
+      height:100%;
+      margin:0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      background: url('https://i.imgur.com/gyJ1BUc.png') no-repeat center center fixed;
+      background-size: cover;
+      color:var(--text);
+      overflow-x: hidden;
+    }
+    .app{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box; flex-direction: column;} /* Added flex-direction: column for logo placement */
+    .logo-container {
+      margin-bottom: 24px; /* Space between logo and card */
+      text-align: center;
+    }
+    .logo {
+      max-width: 200px; /* Adjust as needed */
+      height: auto;
+    }
+    .card{width:100%;max-width:1100px;background:linear-gradient(180deg,#fff,#fbfbfb);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,0.08);overflow:hidden;display:flex;gap:var(--gap);flex-direction:row-reverse}
+    .content{flex:1;min-width:260px;padding:28px;display:flex;flex-direction:column;gap:14px}
+    h1{margin:0;font-size:20px}
+    p{margin:0;line-height:1.6}
+    .lead{font-weight:600}
+    .cta{margin-top:auto;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .btn{background:var(--accent);color:#fff;border:none;padding:12px 18px;border-radius:10px;font-weight:600;cursor:pointer;transition:all 0.3s}
+    .btn:hover{background:#d63d66;transform:translateY(-2px);box-shadow:0 4px 12px rgba(233,78,119,0.3)}
+    .btn:disabled{opacity:0.6;cursor:not-allowed}
+    .ghost{background:transparent;border:1px solid #ddd;color:var(--text)}
+    .ghost:hover{background:#f5f5f5;border-color:#ccc}
+    .price{font-size:20px;font-weight:700;color:#111}
+
+    .carousel-wrap{width:520px;max-width:48%;min-width:300px;background: #f5f5f5;border-radius:12px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center}
+    .slides-container{width:100%;height:100%;overflow:hidden}
+    .slides{display:flex;transition:transform .45s ease;will-change:transform;height:100%;direction:ltr}
+    .slide{min-width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+    .slide img{width:100%;height:100%;object-fit:contain;display:block}
+
+    .control{position:absolute;top:50%;transform:translateY(-50%);z-index:4;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,0.85);backdrop-filter:blur(4px);cursor:pointer;border:0}
+    .control.right{right:12px}
+    .control.left{left:12px}
+    .control svg{width:20px;height:20px}
+
+    .indicators{position:absolute;left:0;right:0;bottom:10px;margin:auto;display:flex;gap:8px;justify-content:center;z-index:5}
+    .dot{width:10px;height:10px;border-radius:999px;background:rgba(255,255,255,0.6);cursor:pointer}
+    .dot.active{background:var(--accent)}
+
+    .modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;overflow-y: auto;}
+    .modal.show{display:flex}
+    .modal-content{background:#fff;padding:30px;border-radius:16px;max-width:400px;width:90%;text-align:right;box-shadow:0 20px 60px rgba(0,0,0,0.3); margin: 50px 0;}
+    .modal h2{margin:0 0 15px;color:var(--accent); text-align: center;}
+    .modal p{margin:10px 0;line-height:1.6}
+    .modal-buttons{display:flex;gap:10px;margin-top:20px;justify-content:center; flex-wrap: wrap;}
+    .close-modal{background:#ddd;color:#333}
+    .close-modal:hover{background:#ccc}
+
+    textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #ccc;font-family:inherit;font-size:14px;resize:none;box-sizing:border-box; text-align: right;}
+    select{width:70px;padding:5px;border-radius:6px;border:1px solid #ccc;font-size:14px;text-align:center;cursor:pointer}
+    .pink-text { color: #e94e77; }
+
+    .form-group{margin-bottom: 15px; text-align: right;}
+    .form-group label{display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px;}
+    .form-group input{
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      font-size: 16px;
+      direction: rtl;
+      text-align: right;
+    }
+    .form-group input[type="email"], 
+    .form-group input[type="tel"] {
+      direction: ltr; 
+      text-align: left;
+    }
+
+    @media (max-width:900px){
+      .card{flex-direction:column-reverse}
+      .carousel-wrap{width:100%;max-width:none;min-width:0;height:320px}
+      .content{padding:18px}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="logo-container">
+      <img src="https://i.imgur.com/sLoJrqk.png" alt="Logo" class="logo">
+    </div>
+    <div class="card" role="application">
+      <div class="content">
+
+        <p class="lead">ידעת שבטבע – לכל צורה יש סיבה, ולכל צורה יש תפקיד?<br>
+        "משושה לא מרוצה" הוא ספר שמזכיר בדיוק את זה –<br>
+        גם שאנחנו שונים, יש לנו מקום, חשיבות ומשמעות, בדיוק ככה כמו שאנחנו.</p>
+
+        <p class="pink-text">מתאים כמתנה לילד, להורה, לצוות חינוכי, והכי חשוב – לעצמך ❤️</p>
+        
+        <p class="pink-text">זה הזמן להודות לאדם הזה בחיים שלך –<br>
+        מחנכ/ת, גננ/ת, חבר/ה או כל דמות שהאמינה, חיזקה ועודדה –<br>
+        הספר הזה הוא הדרך הכי מרגשת להגיד תודה.</p>
+
+        <p>משושה לא מרוצה הוא ספר ילדים ששם במרכזו את הקשר בין מבוגר משמעותי לדימוי העצמי של הילד, ויוצר פתח לשיח רגשי.<br>
+        הוא גם כלי דידקטי ללימוד צורות – ולהבנה שכל צורה בטבע יש לה תפקיד וחשיבות.</p>
+
+        <p class="lead">כי זה מדעי – לכל צורה יש סיבה, זה ממש לא מקרי.</p>
+
+        <blockquote>ספר עם הומור ורגש – שעושה סדר בגאומטריה של הלב.</blockquote>
+
+        <p><strong>מה עכשיו?</strong><br>בחרו את מספר העותקים,<br>ואנחנו נדאג שהוא יגיע ארוז באהבה – מוכן לרגש.</p>
+        <label for="copies">מספר עותקים:</label>
+        <select id="copies">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+          <option value="11">11</option>
+          <option value="12">12</option>
+          <option value="13">13</option>
+          <option value="14">14</option>
+          <option value="15">15</option>
+          <option value="16">16</option>
+          <option value="17">17</option>
+          <option value="18">18</option>
+          <option value="19">19</option>
+          <option value="20">20</option>
+        </select>
+
+        <div class="cta">
+          <div class="price" id="totalPrice">₪64</div>
+          <button class="btn" id="payBtn">קנה עכשיו עם Bit</button>
+          <button class="btn ghost" id="moreBtn">קרא עוד</button>
+        </div>
+      </div>
+
+      <div class="carousel-wrap" aria-roledescription="carousel">
+        <div class="slides-container">
+          <div class="slides" id="slides">
+            <div class="slide"><img alt="תמונה 1" src="https://i.imgur.com/iLakl3C.jpeg"/></div>
+            <div class="slide"><img alt="תמונה 2" src="https://i.imgur.com/Uku4Nd5.jpeg"/></div>
+
+          </div>
+        </div>
+
+        <button class="control left" id="prev" aria-label="תמונה קודמת">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button class="control right" id="next" aria-label="תמונה הבאה">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+
+        <div class="indicators" id="dots"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="shippingModal">
+    <div class="modal-content">
+      <h2>פרטי משלוח וקשר 📦</h2>
+      <p>אנא מלאו את הפרטים לקבלת הספר והמשלוח:</p>
+      
+      <div class="form-group">
+        <label for="shippingName">שם מלא</label>
+        <input type="text" id="shippingName" required placeholder="שם ושם משפחה">
+      </div>
+      
+      <div class="form-group">
+        <label for="shippingPhone">טלפון</label>
+        <input type="tel" id="shippingPhone" required placeholder="05X-XXXXXXX">
+      </div>
+      
+      <div class="form-group">
+        <label for="shippingEmail">דוא"ל</label>
+        <input type="email" id="shippingEmail" required placeholder="example@mail.com">
+      </div>
+
+      <div class="form-group">
+        <label for="shippingCity">עיר</label>
+        <input type="text" id="shippingCity" required placeholder="לדוגמה: תל אביב">
+      </div>
+      
+      <div class="form-group">
+        <label for="shippingAddress">כתובת מלאה</label>
+        <input type="text" id="shippingAddress" required placeholder="רחוב, מספר בית, דירה">
+      </div>
+      
+      <div class="modal-buttons">
+        <button class="btn" id="continueToPaymentBtn">המשך לתשלום</button>
+        <button class="btn close-modal" data-modal="shippingModal">ביטול</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="modal" id="paymentModal">
+    <div class="modal-content">
+      <h2 id="paymentModalTitle">תשלום דרך Bit</h2>
+      <p><strong>סכום לתשלום: <span id="paymentTotalAmount">₪64</span></strong></p>
+      <p>אנא לחצו על "פתח את Bit" כדי לעבור לאפליקציה, ואז בצעו את התשלום. **פרטי ההזמנה יישלחו אוטומטית למייל**.</p>
+      <div class="modal-buttons">
+        <button class="btn" id="openBitApp">פתח את Bit</button>
+        <button class="btn close-modal" data-modal="paymentModal">ביטול</button>
+      </div>
+      <p style="font-size:14px;margin-top:15px;color:#666">
+        מומלץ לשמור את אישור העסקה.
+      </p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+  
+  <script>
+    // 🛑 STEP 1: Replace 'YOUR_USER_ID' with your actual EmailJS User ID
+    emailjs.init('P5NmDjpFs_fgKFY9I'); 
+
+    const PRICE_PER_BOOK = 64;
+    const copiesInput = document.getElementById('copies');
+    const totalPriceEl = document.getElementById('totalPrice');
+    
+    // Elements
+    const payBtn = document.getElementById('payBtn');
+    const shippingModal = document.getElementById('shippingModal');
+    const continueToPaymentBtn = document.getElementById('continueToPaymentBtn');
+    const paymentModal = document.getElementById('paymentModal');
+    const paymentTotalAmount = document.getElementById('paymentTotalAmount');
+    const moreBtn = document.getElementById('moreBtn');
+    const openBitApp = document.getElementById('openBitApp'); // The button that triggers the email send and the payment link
+
+    // Global variable to store order details for EmailJS
+    let currentOrderData = {};
+
+    function updateTotal() {
+      const quantity = parseInt(copiesInput.value) || 1;
+      const total = PRICE_PER_BOOK * quantity;
+      totalPriceEl.textContent = `₪${total}`;
+      paymentTotalAmount.textContent = `₪${total}`; 
+    }
+
+    function closeModal(modalElement) {
+      modalElement.classList.remove('show');
+    }
+
+    // --- Email Sending Function ---
+    function sendOrderEmail() {
+        if (Object.keys(currentOrderData).length === 0) {
+            console.error('Error: No order data available for email sending.');
+            return;
+        }
+
+        // 🛑 STEP 2: Replace 'YOUR_SERVICE_ID' and 'YOUR_TEMPLATE_ID' with your actual IDs
+        emailjs.send('service_cprtcca', 'template_50ax085', {
+            to_email: 'talyaasban@gmail.com', // This should be the recipient email for the order details
+            name: currentOrderData.name,
+            phone: currentOrderData.phone,
+            email: currentOrderData.email,
+            city: currentOrderData.city,
+            address: currentOrderData.address,
+            // dedication is removed
+            copies: currentOrderData.copies,
+            total: currentOrderData.totalPrice 
+        })
+        .then(function(response) {
+            console.log('SUCCESS!', response.status, response.text);
+        }, function(error) {
+            console.log('FAILED...', error);
+        });
+    }
+
+    // --- Event Listeners and Logic ---
+    copiesInput.addEventListener('change', updateTotal);
+    updateTotal(); 
+
+    // Carousel Logic (kept for completeness)
+    (function(){
+        const slidesEl = document.getElementById('slides');
+        const slides = Array.from(slidesEl.children);
+        const dotsEl = document.getElementById('dots');
+        const prev = document.getElementById('prev');
+        const next = document.getElementById('next');
+        let index = 0;
+        const intervalMs = 3000;
+        let timer = null;
+
+        slides.forEach((s,i)=>{
+            const d = document.createElement('div'); 
+            d.className='dot'; 
+            d.dataset.i=i; 
+            d.addEventListener('click',()=>goTo(i)); 
+            dotsEl.appendChild(d);
+        });
+
+        function update(){
+            slidesEl.style.transform = `translateX(${-index*100}%)`;
+            Array.from(dotsEl.children).forEach((d,i)=> d.classList.toggle('active', i===index));
+        }
+
+        function nextSlide(){ index = (index+1) % slides.length; update(); }
+        function prevSlide(){ index = (index-1 + slides.length) % slides.length; update(); }
+        function goTo(i){ index = ((i%slides.length)+slides.length)%slides.length; update(); resetTimer(); }
+
+        prev.addEventListener('click', ()=>{ prevSlide(); resetTimer(); });
+        next.addEventListener('click', ()=>{ nextSlide(); resetTimer(); });
+
+        function startTimer(){ if(timer) clearInterval(timer); timer = setInterval(nextSlide, intervalMs); }
+        function resetTimer(){ startTimer(); }
+        startTimer();
+
+        const carouselWrap = document.querySelector('.carousel-wrap');
+        carouselWrap.addEventListener('mouseenter', ()=>{ if(timer) clearInterval(timer); });
+        carouselWrap.addEventListener('mouseleave', ()=>{ startTimer(); });
+
+        update();
+    })();
+
+    // Open Shipping Modal
+    payBtn.addEventListener('click', ()=>{ 
+      updateTotal();
+      shippingModal.classList.add('show'); 
+    });
+
+    // Handle 'Continue to Payment' button (Validation & Data Storage)
+    continueToPaymentBtn.addEventListener('click', (e)=>{
+      const name = document.getElementById('shippingName').value.trim();
+      const phone = document.getElementById('shippingPhone').value.trim();
+      const email = document.getElementById('shippingEmail').value.trim();
+      const city = document.getElementById('shippingCity').value.trim();
+      const address = document.getElementById('shippingAddress').value.trim();
+      // const dedication = document.getElementById('dedication').value; // REMOVED
+      const copies = copiesInput.value;
+      const totalPrice = paymentTotalAmount.textContent;
+      
+      if (!name || !phone || !email || !city || !address) {
+          alert('אנא מלאו את כל פרטי המשלוח הנדרשים.');
+          return;
+      }
+      
+      // Store validated data (Dedication removed from data)
+      currentOrderData = { name, phone, email, city, address, copies, totalPrice, dedication: "לא נבחרה הקדשה אישית" }; // Adding a default/placeholder for the email template
+
+      // Hide Shipping Modal and Show Payment Modal
+      closeModal(shippingModal);
+      paymentModal.classList.add('show');
+    });
+
+    openBitApp.addEventListener('click', ()=>{
+        // 1. Trigger the Email Send
+        sendOrderEmail(); 
+
+        // 2. Delay Bit redirection slightly to allow EmailJS to finish
+        const bitUrl = 'https://www.bitpay.co.il/app/me/B33B6B29-A1D1-1BCE-C9EC-0AD3C01AF6C8856D';
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+        setTimeout(() => {
+            if (isMobile) {
+                window.location.href = bitUrl;
+            } else {
+                window.open(bitUrl, '_blank');
+            }
+            closeModal(paymentModal);
+        }, 2200); // 2.2 second delay, increased slightly to ensure email is sent
+    });
+
+
+    // Close Modals using the 'ביטול' buttons or outside click
+    document.querySelectorAll('.close-modal').forEach(button => {
+        button.addEventListener('click', () => {
+            const modalId = button.dataset.modal || (button.closest('.modal') ? button.closest('.modal').id : null);
+            if (modalId) {
+                closeModal(document.getElementById(modalId));
+            }
+        });
+    });
+
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', (e) => { 
+            if(e.target === modal){ 
+                closeModal(modal);
+            } 
+        });
+    });
+    
+    moreBtn.addEventListener('click', ()=>{ alert('למידע נוסף ולפרטי יצירת קשר:\n\ntalyaasban@gmail.com.\n\n הספר "משושה לא מרוצה" זמין למשלוח לכל הארץ עד 7 ימי עסקים.'); });
+  </script>
+</body>
+</html>
