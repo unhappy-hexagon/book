@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ספר — מצגת תמונות + כפתור קנייה</title>
+  <title>unhappy hexagon.book</title>
   <style>
     :root{--gap:18px;--accent:#e94e77;--bg:#e0f2f7; --text:#222; --success: #28a745; --error: #dc3545;}
     html,body{
@@ -36,9 +36,9 @@
     .coupon-section {
         display: flex;
         gap: 10px;
-        align-items: flex-start; /* Changed to start to align with message */
+        align-items: flex-start; 
         margin-top: 15px;
-        flex-direction: column; /* Stack input and message */
+        flex-direction: column; 
     }
     .coupon-input-group {
         display: flex;
@@ -52,7 +52,7 @@
         width: 120px;
         font-size: 14px;
         text-align: center;
-        direction: ltr; /* Good for codes */
+        direction: ltr; 
     }
     .btn-apply {
         background: #fff;
@@ -294,13 +294,17 @@
     const PRICE_PER_BOOK = 64;
     
     // --- Coupon Logic Variables ---
-    const COUPON_CODE = 'TALYA20'; // The code to enter
-    const DISCOUNT_RATE = 0.20; // 20% discount
+    // הגדרת קודי הקופון וההנחות שלהם
+    const COUPONS = {
+        'TALYA20': 0.20, // 20% discount
+        'TALYA10': 0.10  // 10% discount
+    };
     let isDiscountApplied = false;
+    let discountRate = 0; // The active discount rate
 
     const copiesInput = document.getElementById('copies');
     const totalPriceEl = document.getElementById('totalPrice');
-    const oldPriceEl = document.getElementById('oldPrice'); // Element for strikethrough price
+    const oldPriceEl = document.getElementById('oldPrice'); 
     
     // Elements
     const payBtn = document.getElementById('payBtn');
@@ -326,11 +330,12 @@
       // If discount is active, calculate new price
       if (isDiscountApplied) {
           const originalTotal = total;
-          total = total * (1 - DISCOUNT_RATE);
           
-          // Round to 2 decimal places if needed, or Math.round for whole numbers
-          // total = Math.round(total); 
-          total = total.toFixed(2); // Using 2 decimals
+          // Apply discount
+          total = total * (1 - discountRate);
+
+          // ROUNDING CHANGE: Round to the nearest integer
+          total = Math.round(total); 
           
           oldPriceEl.textContent = `₪${originalTotal}`;
           oldPriceEl.classList.add('show');
@@ -346,12 +351,17 @@
     function applyCoupon() {
         const inputCode = couponInput.value.trim().toUpperCase();
         
-        if (inputCode === COUPON_CODE) {
+        // Check if the input code exists in the COUPONS object
+        if (COUPONS.hasOwnProperty(inputCode)) {
             if (!isDiscountApplied) {
                 isDiscountApplied = true;
-                couponMsg.textContent = "הקופון הופעל בהצלחה! (20% הנחה)";
+                discountRate = COUPONS[inputCode]; // Set the discount rate from the map
+                const discountPercent = discountRate * 100;
+
+                couponMsg.textContent = `הקופון הופעל בהצלחה! (${discountPercent}% הנחה)`;
                 couponMsg.className = "coupon-msg success";
-                // Disable input to prevent confusion
+                
+                // Disable input
                 couponInput.disabled = true; 
                 applyCouponBtn.disabled = true;
                 applyCouponBtn.textContent = "V";
