@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>unhappy hexagon.book</title>
+  <title>ספר — מצגת תמונות + כפתור קנייה</title>
   <style>
-    :root{--gap:18px;--accent:#e94e77;--bg:#e0f2f7; /* Changed to baby blue */ --text:#222}
+    :root{--gap:18px;--accent:#e94e77;--bg:#e0f2f7; --text:#222; --success: #28a745; --error: #dc3545;}
     html,body{
       height:100%;
       margin:0;
@@ -15,13 +15,13 @@
       color:var(--text);
       overflow-x: hidden;
     }
-    .app{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box; flex-direction: column;} /* Added flex-direction: column for logo placement */
+    .app{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box; flex-direction: column;}
     .logo-container {
-      margin-bottom: 24px; /* Space between logo and card */
+      margin-bottom: 24px;
       text-align: center;
     }
     .logo {
-      max-width: 200px; /* Adjust as needed */
+      max-width: 200px;
       height: auto;
     }
     .card{width:100%;max-width:1100px;background:linear-gradient(180deg,#fff,#fbfbfb);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,0.08);overflow:hidden;display:flex;gap:var(--gap);flex-direction:row-reverse}
@@ -29,13 +29,67 @@
     h1{margin:0;font-size:20px}
     p{margin:0;line-height:1.6}
     .lead{font-weight:600}
+    
+    /* CTA & Coupon Styles */
     .cta{margin-top:auto;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    
+    .coupon-section {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start; /* Changed to start to align with message */
+        margin-top: 15px;
+        flex-direction: column; /* Stack input and message */
+    }
+    .coupon-input-group {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    .coupon-section input {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        width: 120px;
+        font-size: 14px;
+        text-align: center;
+        direction: ltr; /* Good for codes */
+    }
+    .btn-apply {
+        background: #fff;
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+    .btn-apply:hover {
+        background: var(--accent);
+        color: #fff;
+    }
+    .coupon-msg {
+        font-size: 13px;
+        font-weight: 600;
+        min-height: 20px;
+    }
+    .coupon-msg.success { color: var(--success); }
+    .coupon-msg.error { color: var(--error); }
+
     .btn{background:var(--accent);color:#fff;border:none;padding:12px 18px;border-radius:10px;font-weight:600;cursor:pointer;transition:all 0.3s}
     .btn:hover{background:#d63d66;transform:translateY(-2px);box-shadow:0 4px 12px rgba(233,78,119,0.3)}
     .btn:disabled{opacity:0.6;cursor:not-allowed}
     .ghost{background:transparent;border:1px solid #ddd;color:var(--text)}
     .ghost:hover{background:#f5f5f5;border-color:#ccc}
+    
+    .price-container {
+        display: flex;
+        flex-direction: column;
+    }
     .price{font-size:20px;font-weight:700;color:#111}
+    .old-price { text-decoration: line-through; color: #999; font-size: 16px; margin-left: 5px; display: none;}
+    .old-price.show { display: inline-block; }
 
     .carousel-wrap{width:520px;max-width:48%;min-width:300px;background: #f5f5f5;border-radius:12px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center}
     .slides-container{width:100%;height:100%;overflow:hidden}
@@ -139,9 +193,20 @@
           <option value="19">19</option>
           <option value="20">20</option>
         </select>
+        
+        <div class="coupon-section">
+            <div class="coupon-input-group">
+                <input type="text" id="couponCode" placeholder="קוד קופון">
+                <button type="button" class="btn-apply" id="applyCouponBtn">החל</button>
+            </div>
+            <div class="coupon-msg" id="couponMsg"></div>
+        </div>
 
         <div class="cta">
-          <div class="price" id="totalPrice">₪64</div>
+          <div class="price-container">
+            <span class="old-price" id="oldPrice"></span>
+            <div class="price" id="totalPrice">₪64</div>
+          </div>
           <button class="btn" id="payBtn">קנה עכשיו עם Bit</button>
           <button class="btn ghost" id="moreBtn">קרא עוד</button>
         </div>
@@ -227,8 +292,15 @@
     emailjs.init('P5NmDjpFs_fgKFY9I'); 
 
     const PRICE_PER_BOOK = 64;
+    
+    // --- Coupon Logic Variables ---
+    const COUPON_CODE = 'TALYA20'; // The code to enter
+    const DISCOUNT_RATE = 0.20; // 20% discount
+    let isDiscountApplied = false;
+
     const copiesInput = document.getElementById('copies');
     const totalPriceEl = document.getElementById('totalPrice');
+    const oldPriceEl = document.getElementById('oldPrice'); // Element for strikethrough price
     
     // Elements
     const payBtn = document.getElementById('payBtn');
@@ -237,16 +309,61 @@
     const paymentModal = document.getElementById('paymentModal');
     const paymentTotalAmount = document.getElementById('paymentTotalAmount');
     const moreBtn = document.getElementById('moreBtn');
-    const openBitApp = document.getElementById('openBitApp'); // The button that triggers the email send and the payment link
+    const openBitApp = document.getElementById('openBitApp'); 
+
+    // Coupon Elements
+    const couponInput = document.getElementById('couponCode');
+    const applyCouponBtn = document.getElementById('applyCouponBtn');
+    const couponMsg = document.getElementById('couponMsg');
 
     // Global variable to store order details for EmailJS
     let currentOrderData = {};
 
     function updateTotal() {
       const quantity = parseInt(copiesInput.value) || 1;
-      const total = PRICE_PER_BOOK * quantity;
+      let total = PRICE_PER_BOOK * quantity;
+      
+      // If discount is active, calculate new price
+      if (isDiscountApplied) {
+          const originalTotal = total;
+          total = total * (1 - DISCOUNT_RATE);
+          
+          // Round to 2 decimal places if needed, or Math.round for whole numbers
+          // total = Math.round(total); 
+          total = total.toFixed(2); // Using 2 decimals
+          
+          oldPriceEl.textContent = `₪${originalTotal}`;
+          oldPriceEl.classList.add('show');
+      } else {
+          oldPriceEl.classList.remove('show');
+      }
+
       totalPriceEl.textContent = `₪${total}`;
       paymentTotalAmount.textContent = `₪${total}`; 
+    }
+
+    // Function to handle coupon Application
+    function applyCoupon() {
+        const inputCode = couponInput.value.trim().toUpperCase();
+        
+        if (inputCode === COUPON_CODE) {
+            if (!isDiscountApplied) {
+                isDiscountApplied = true;
+                couponMsg.textContent = "הקופון הופעל בהצלחה! (20% הנחה)";
+                couponMsg.className = "coupon-msg success";
+                // Disable input to prevent confusion
+                couponInput.disabled = true; 
+                applyCouponBtn.disabled = true;
+                applyCouponBtn.textContent = "V";
+                updateTotal();
+            }
+        } else if (inputCode === "") {
+            couponMsg.textContent = "אנא הזן קוד קופון";
+            couponMsg.className = "coupon-msg error";
+        } else {
+            couponMsg.textContent = "קוד קופון שגוי";
+            couponMsg.className = "coupon-msg error";
+        }
     }
 
     function closeModal(modalElement) {
@@ -262,13 +379,12 @@
 
         // 🛑 STEP 2: Replace 'YOUR_SERVICE_ID' and 'YOUR_TEMPLATE_ID' with your actual IDs
         emailjs.send('service_cprtcca', 'template_50ax085', {
-            to_email: 'talyaasban@gmail.com', // This should be the recipient email for the order details
+            to_email: 'talyaasban@gmail.com', 
             name: currentOrderData.name,
             phone: currentOrderData.phone,
             email: currentOrderData.email,
             city: currentOrderData.city,
             address: currentOrderData.address,
-            // dedication is removed
             copies: currentOrderData.copies,
             total: currentOrderData.totalPrice 
         })
@@ -281,6 +397,17 @@
 
     // --- Event Listeners and Logic ---
     copiesInput.addEventListener('change', updateTotal);
+    
+    // Listen for Coupon Click
+    applyCouponBtn.addEventListener('click', applyCoupon);
+    
+    // Allow pressing Enter in coupon field
+    couponInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            applyCoupon();
+        }
+    });
+
     updateTotal(); 
 
     // Carousel Logic (kept for completeness)
@@ -338,7 +465,6 @@
       const email = document.getElementById('shippingEmail').value.trim();
       const city = document.getElementById('shippingCity').value.trim();
       const address = document.getElementById('shippingAddress').value.trim();
-      // const dedication = document.getElementById('dedication').value; // REMOVED
       const copies = copiesInput.value;
       const totalPrice = paymentTotalAmount.textContent;
       
@@ -347,8 +473,8 @@
           return;
       }
       
-      // Store validated data (Dedication removed from data)
-      currentOrderData = { name, phone, email, city, address, copies, totalPrice, dedication: "לא נבחרה הקדשה אישית" }; // Adding a default/placeholder for the email template
+      // Store validated data
+      currentOrderData = { name, phone, email, city, address, copies, totalPrice, dedication: "לא נבחרה הקדשה אישית" }; 
 
       // Hide Shipping Modal and Show Payment Modal
       closeModal(shippingModal);
@@ -370,7 +496,7 @@
                 window.open(bitUrl, '_blank');
             }
             closeModal(paymentModal);
-        }, 2200); // 2.2 second delay, increased slightly to ensure email is sent
+        }, 2200); 
     });
 
 
@@ -396,4 +522,3 @@
   </script>
 </body>
 </html>
-
